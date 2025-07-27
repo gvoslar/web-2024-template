@@ -1,14 +1,439 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
-    <title>Vite + React + TS</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра-кликер</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Начальный экран */
+        .start-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .start-screen h1 {
+            color: white;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nickname-input {
+            padding: 15px 20px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 25px;
+            margin-bottom: 1.5rem;
+            width: 300px;
+            text-align: center;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .start-btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255,0,0,0.3);
+        }
+
+        .start-btn:hover {
+            background: #cc0000;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,0,0,0.4);
+        }
+
+        .start-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Игровой экран */
+        .game-screen {
+            display: none;
+            background: #000;
+            height: 100vh;
+            position: relative;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .score {
+            font-size: 48px;
+            color: white;
+            margin-bottom: 50px;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.3);
+        }
+
+        .click-button {
+            width: 200px;
+            height: 200px;
+            background: #ff0000;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            box-shadow: 0 8px 25px rgba(255,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .click-button:hover {
+            box-shadow: 0 12px 35px rgba(255,0,0,0.6);
+            transform: translateY(-5px);
+        }
+
+        .click-button:active {
+            transform: scale(0.95) translateY(-5px);
+            box-shadow: 0 6px 20px rgba(255,0,0,0.4);
+        }
+
+        .click-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+
+        .click-button.clicked::before {
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+        }
+
+        .leaderboard-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .leaderboard-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .leaderboard-btn:active {
+            background: rgba(255,255,255,0.4);
+        }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 400px;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .modal h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.8rem;
+        }
+
+        .leaderboard-list {
+            list-style: none;
+        }
+
+        .leaderboard-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .leaderboard-list li:last-child {
+            border-bottom: none;
+        }
+
+        .leaderboard-list li:nth-child(-n+3) {
+            font-weight: bold;
+        }
+
+        .leaderboard-list li:nth-child(1) {
+            color: #ffd700;
+        }
+
+        .leaderboard-list li:nth-child(2) {
+            color: #c0c0c0;
+        }
+
+        .leaderboard-list li:nth-child(3) {
+            color: #cd7f32;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .nickname-input {
+                width: 250px;
+                font-size: 1rem;
+            }
+
+            .start-screen h1 {
+                font-size: 2rem;
+            }
+
+            .score {
+                font-size: 36px;
+            }
+
+            .click-button {
+                width: 150px;
+                height: 150px;
+            }
+
+            .modal-content {
+                width: 90%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Начальный экран -->
+    <div class="start-screen" id="startScreen">
+        <h1>🎮 Игра-кликер</h1>
+        <input type="text" class="nickname-input" id="nicknameInput" placeholder="Введите ваш никнейм" maxlength="20">
+        <button class="start-btn" id="startBtn">Начать игру</button>
+    </div>
+
+    <!-- Игровой экран -->
+    <div class="game-screen" id="gameScreen">
+        <div class="score" id="scoreDisplay">0</div>
+        <button class="click-button" id="clickButton"></button>
+        <button class="leaderboard-btn" id="leaderboardBtn">Таблица</button>
+    </div>
+
+    <!-- Модальное окно -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2>🏆 Таблица лидеров</h2>
+            <ul class="leaderboard-list" id="leaderboardList"></ul>
+        </div>
+    </div>
+
+    <script>
+        class ClickerGame {
+            constructor() {
+                this.score = 0;
+                this.nickname = '';
+                this.leaderboard = this.loadLeaderboard();
+                this.initElements();
+                this.bindEvents();
+            }
+
+            initElements() {
+                this.startScreen = document.getElementById('startScreen');
+                this.gameScreen = document.getElementById('gameScreen');
+                this.nicknameInput = document.getElementById('nicknameInput');
+                this.startBtn = document.getElementById('startBtn');
+                this.scoreDisplay = document.getElementById('scoreDisplay');
+                this.clickButton = document.getElementById('clickButton');
+                this.leaderboardBtn = document.getElementById('leaderboardBtn');
+                this.modal = document.getElementById('modal');
+                this.leaderboardList = document.getElementById('leaderboardList');
+            }
+
+            bindEvents() {
+                // Начало игры
+                this.startBtn.addEventListener('click', () => this.startGame());
+                this.nicknameInput.addEventListener('input', () => this.validateNickname());
+                this.nicknameInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && this.nicknameInput.value.trim()) {
+                        this.startGame();
+                    }
+                });
+
+                // Игровая механика
+                this.clickButton.addEventListener('click', () => this.handleClick());
+
+                // Таблица лидеров (зажатие/отпускание мыши)
+                this.leaderboardBtn.addEventListener('mousedown', () => this.showModal());
+                this.leaderboardBtn.addEventListener('mouseup', () => this.hideModal());
+                this.leaderboardBtn.addEventListener('mouseleave', () => this.hideModal());
+
+                // Закрытие модального окна при клике вне его
+                this.modal.addEventListener('click', (e) => {
+                    if (e.target === this.modal) {
+                        this.hideModal();
+                    }
+                });
+            }
+
+            validateNickname() {
+                const nickname = this.nicknameInput.value.trim();
+                this.startBtn.disabled = !nickname;
+            }
+
+            startGame() {
+                const nickname = this.nicknameInput.value.trim();
+                if (!nickname) return;
+
+                this.nickname = nickname;
+                this.score = this.getPlayerScore(nickname);
+                this.updateScoreDisplay();
+                
+                this.startScreen.style.display = 'none';
+                this.gameScreen.style.display = 'flex';
+            }
+
+            handleClick() {
+                this.score++;
+                this.updateScoreDisplay();
+                this.updateLeaderboard();
+                this.addClickEffect();
+            }
+
+            addClickEffect() {
+                this.clickButton.classList.add('clicked');
+                setTimeout(() => {
+                    this.clickButton.classList.remove('clicked');
+                }, 300);
+            }
+
+            updateScoreDisplay() {
+                this.scoreDisplay.textContent = this.score.toLocaleString();
+            }
+
+            getPlayerScore(nickname) {
+                const player = this.leaderboard.find(p => p.nickname === nickname);
+                return player ? player.score : 0;
+            }
+
+            updateLeaderboard() {
+                const existingPlayerIndex = this.leaderboard.findIndex(p => p.nickname === this.nickname);
+                
+                if (existingPlayerIndex !== -1) {
+                    this.leaderboard[existingPlayerIndex].score = this.score;
+                } else {
+                    this.leaderboard.push({
+                        nickname: this.nickname,
+                        score: this.score
+                    });
+                }
+
+                this.leaderboard.sort((a, b) => b.score - a.score);
+                this.saveLeaderboard();
+            }
+
+            showModal() {
+                this.renderLeaderboard();
+                this.modal.style.display = 'flex';
+            }
+
+            hideModal() {
+                this.modal.style.display = 'none';
+            }
+
+            renderLeaderboard() {
+                const top20 = this.leaderboard.slice(0, 20);
+                this.leaderboardList.innerHTML = '';
+
+                if (top20.length === 0) {
+                    const li = document.createElement('li');
+                    li.textContent = 'Пока нет игроков';
+                    li.style.textAlign = 'center';
+                    li.style.fontStyle = 'italic';
+                    this.leaderboardList.appendChild(li);
+                    return;
+                }
+
+                top20.forEach((player, index) => {
+                    const li = document.createElement('li');
+                    const position = index + 1;
+                    const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
+                    li.textContent = `${position}. ${player.nickname} - ${player.score.toLocaleString()} ${medal}`;
+                    this.leaderboardList.appendChild(li);
+                });
+            }
+
+            loadLeaderboard() {
+                try {
+                    const saved = localStorage.getItem('clickerLeaderboard');
+                    return saved ? JSON.parse(saved) : [];
+                } catch (error) {
+                    console.error('Ошибка загрузки таблицы лидеров:', error);
+                    return [];
+                }
+            }
+
+            saveLeaderboard() {
+                try {
+                    localStorage.setItem('clickerLeaderboard', JSON.stringify(this.leaderboard));
+                } catch (error) {
+                    console.error('Ошибка сохранения таблицы лидеров:', error);
+                }
+            }
+        }
+
+        // Инициализация игры
+        document.addEventListener('DOMContentLoaded', () => {
+            new ClickerGame();
+        });
+
+        // Предотвращение выделения текста при зажатии кнопки таблицы
+        document.addEventListener('selectstart', (e) => {
+            if (e.target.id === 'leaderboardBtn') {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
 </html>
